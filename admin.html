@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Amistades Belgas — Backend (Pedidos)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0f172a; --card:#111827; --muted:#94a3b8; --text:#e5e7eb; --accent:#22c55e; --accent-600:#16a34a; --shadow: 0 10px 25px rgba(0,0,0,.25); --radius:18px;
+      --green-row: rgba(34,197,94,.12);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Arial,sans-serif}
+    .container{max-width:1000px;margin:28px auto 56px;padding:0 16px}
+    header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+    .card{background:var(--card);border:1px solid #1f2937;border-radius:var(--radius);box-shadow:var(--shadow);padding:16px}
+    h1{font-size:22px;margin:0 0 6px}
+    .toolbar{display:grid;grid-template-columns: 1fr 300px 220px;gap:10px;align-items:end;margin:8px 0}
+    label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
+    input,select,button{padding:10px 12px;border-radius:12px;border:1px solid #334155;background:#0b1220;color:var(--text)}
+    button{cursor:pointer}
+    .btn-primary{background:var(--accent);border-color:var(--accent-600);color:#052e16;font-weight:700}
+    .btn-ghost{background:transparent}
+    .list{margin-top:12px}
+    details{background:#0b1220;border:1px solid #1f2937;border-radius:12px;padding:8px 12px;margin-bottom:8px}
+    summary{display:flex;justify-content:space-between;align-items:center;cursor:pointer;list-style:none}
+    summary::-webkit-details-marker{display:none}
+    .row{display:grid;grid-template-columns: 1fr 120px 110px 110px;gap:6px;align-items:center}
+    .status{font-size:12px;border:1px solid #334155;border-radius:999px;padding:2px 8px}
+    .completed{background:var(--green-row);border-color:#14532d}
+    .items{font-size:14px;color:#cbd5e1;margin-top:6px}
+    .muted{color:var(--muted);font-size:12px}
+    .pill{font-size:12px;margin-left:8px;color:#cbd5e1}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Amistades Belgas — Pedidos (backend)</h1>
+      <div class="muted">Vista de administración</div>
+    </header>
+
+    <div class="card">
+      <div class="toolbar">
+        <div>
+          <label>Rango</label>
+          <select id="range">
+            <option value="today">Pedidos de hoy</option>
+            <option value="thursday">Histórico (jueves)</option>
+          </select>
+        </div>
+        <div>
+          <label>Fecha (solo jueves)</label>
+          <input id="dateInput" type="date" />
+        </div>
+        <div style="text-align:right">
+          <label>Orden</label>
+          <select id="orderBy">
+            <option value="createdAt">Por creación</option>
+            <option value="name">Por nombre</option>
+            <option value="total">Por total</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="muted">Click en una fila para ver el detalle. Usa el botón «Completar» para pasarlo abajo en verde.</div>
+
+      <div id="list" class="list"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    // --- Firebase init (mismo objeto de config que en el frontend) ---------
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+    const hasFirebase = Object.values(firebaseConfig).every(v => typeof v === "string" && !v.startsWith("YOUR_"));
+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import {
+      getFirestore, collection, query, where, orderBy, onSnapshot,
+      updateDoc, doc, serverTimestamp, Timestamp, getDocs, limit, startAt, endAt
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+    let db = null;
+    if(hasFirebase){
+      const app = initializeApp(firebaseConfig);
+      db = getFirestore(app);
+    } else {
+      document.getElementById("list").innerHTML = "<div class='muted'>Configura Firebase en este archivo para ver los pedidos reales.</div>";
+    }
+
+    // Helpers
+    const € = (n) => new Intl.NumberFormat('es-ES', {style:'currency', currency:'EUR'}).format(n || 0);
+    const pad2 = (n) => n.toString().padStart(2,'0');
+    function startEndOfDay(d){
+      const start = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0,0,0);
+      const end = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23,59,59,999);
+      return {start, end};
+    }
+    function nearestThursday(baseDate){
+      // if base is Thursday -> same, else get closest previous Thursday
+      const d = new Date(baseDate);
+      const day = d.getDay(); // 0=Sun .. 4=Thu
+      const diff = (day >= 4) ? day - 4 : (7 - (4 - day));
+      d.setDate(d.getDate() - diff);
+      return d;
+    }
+    function ensureThursdayInput(el, value){
+      // force Thursdays in date input
+      const d = new Date(value);
+      if(d.getDay() !== 4){
+        const nd = nearestThursday(d);
+        el.value = `${nd.getFullYear()}-${pad2(nd.getMonth()+1)}-${pad2(nd.getDate())}`;
+      }
+    }
+
+    const listEl = document.getElementById("list");
+    const dateInput = document.getElementById("dateInput");
+    const rangeSel = document.getElementById("range");
+    const orderSel = document.getElementById("orderBy");
+
+    // Initialize date to today or last Thursday
+    const now = new Date();
+    const lastThu = nearestThursday(now);
+    dateInput.value = `${lastThu.getFullYear()}-${pad2(lastThu.getMonth()+1)}-${pad2(lastThu.getDate())}`;
+
+    dateInput.addEventListener("change", (e)=>{
+      ensureThursdayInput(dateInput, e.target.value);
+      runQuery();
+    });
+    rangeSel.addEventListener("change", runQuery);
+    orderSel.addEventListener("change", runQuery);
+
+    let unsubscribe = null;
+    function runQuery(){
+      if(!db) return;
+      if(unsubscribe){ unsubscribe(); unsubscribe = null; }
+
+      let qRef = collection(db, "orders");
+      const mode = rangeSel.value;
+
+      if(mode === "today"){
+        const {start, end} = startEndOfDay(new Date());
+        qRef = query(
+          qRef,
+          where("createdAt", ">=", Timestamp.fromDate(start)),
+          where("createdAt", "<=", Timestamp.fromDate(end))
+        );
+      }else{
+        const d = new Date(dateInput.value);
+        ensureThursdayInput(dateInput, dateInput.value);
+        const {start, end} = startEndOfDay(d);
+        qRef = query(
+          qRef,
+          where("createdAt", ">=", Timestamp.fromDate(start)),
+          where("createdAt", "<=", Timestamp.fromDate(end))
+        );
+      }
+
+      // Always show pending first, then completed (client sorting)
+      unsubscribe = onSnapshot(qRef, (snap)=>{
+        const rows = [];
+        snap.forEach(docu => rows.push({id:docu.id, ...docu.data()}));
+        const by = orderSel.value;
+        rows.sort((a,b)=>{
+          // pending first
+          if(a.status !== b.status){
+            if(a.status === "pending") return -1;
+            if(b.status === "pending") return 1;
+          }
+          if(by === "name") return (a.name||"").localeCompare(b.name||"");
+          if(by === "total") return (b.total||0) - (a.total||0);
+          // createdAt desc
+          const at = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+          const bt = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+          return bt - at;
+        });
+        renderList(rows);
+      });
+    }
+
+    function renderList(rows){
+      if(!rows.length){
+        listEl.innerHTML = "<div class='muted'>No hay pedidos en este rango.</div>";
+        return;
+      }
+      listEl.innerHTML = "";
+      rows.forEach(row => {
+        const details = document.createElement("details");
+        const isCompleted = row.status === "completed";
+        details.style.background = isCompleted ? "var(--green-row)" : "#0b1220";
+
+        const time = row.createdAt?.toDate ? row.createdAt.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : "--:--";
+        const summary = document.createElement("summary");
+        summary.innerHTML = `
+          <div class="row">
+            <div><strong>${row.name || "—"}</strong> <span class="pill">(${(row.items||[]).reduce((a,x)=>a+x.qty,0)} uds)</span></div>
+            <div class="muted">${time}</div>
+            <div>${€(row.total)}</div>
+            <div style="text-align:right">
+              <span class="status ${isCompleted ? "completed": ""}">${isCompleted ? "Completado" : "Pendiente"}</span>
+            </div>
+          </div>`;
+
+        const content = document.createElement("div");
+        content.className = "items";
+        const lines = (row.items||[]).map(it => `• ${it.name} × ${it.qty}`).join("<br>");
+        content.innerHTML = lines || "<em>Sin líneas</em>";
+
+        const actions = document.createElement("div");
+        actions.style = "margin-top:8px; display:flex; gap:8px; justify-content:flex-end";
+        const btn = document.createElement("button");
+        btn.textContent = isCompleted ? "Marcar como pendiente" : "Completar";
+        btn.className = isCompleted ? "btn-ghost" : "btn-primary";
+        btn.addEventListener("click", async (e)=>{
+          e.stopPropagation();
+          try{
+            await updateDoc(doc(db, "orders", row.id), {
+              status: isCompleted ? "pending" : "completed",
+              updatedAt: serverTimestamp(),
+              completedAt: isCompleted ? null : serverTimestamp()
+            });
+          }catch(err){ alert("Error al actualizar: " + err.message); }
+        });
+        actions.appendChild(btn);
+
+        details.appendChild(summary);
+        details.appendChild(content);
+        details.appendChild(actions);
+        listEl.appendChild(details);
+      });
+    }
+
+    runQuery();
+  </script>
+</body>
+</html>
