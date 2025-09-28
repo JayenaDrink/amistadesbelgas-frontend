@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Amistades Belgas — Admin v3</title>
+  <title>Amistades Belgas — Admin v3 (fix orden llegada)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -26,8 +26,6 @@
     .completed{background:var(--green-row);border-color:#14532d}
     .items{font-size:14px;color:#cbd5e1;margin-top:6px}
     .pill{font-size:12px;margin-left:8px;color:#cbd5e1}
-    .stat{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0 0}
-    .stat > div{background:#0b1220;border:1px solid #1f2937;border-radius:10px;padding:6px 10px;font-size:12px}
     .error{color:#fecaca}
   </style>
 </head>
@@ -35,7 +33,7 @@
   <div class="container">
     <header>
       <h1>Amistades Belgas — Pedidos (Admin v3)</h1>
-      <div class="muted">Incluye modo "sin filtros" para depuración</div>
+      <div class="muted">Orden por llegada (más viejo → más nuevo)</div>
     </header>
 
     <div class="card">
@@ -55,24 +53,20 @@
         <div>
           <label>Orden</label>
           <select id="orderBy">
-            <option value="createdAt">Por creación</option>
+            <option value="arrival">Orden de llegada</option>
             <option value="name">Por nombre</option>
             <option value="total">Por total</option>
           </select>
         </div>
       </div>
 
-      <div class="stat">
-        <div id="statDocs">—</div>
-        <div id="statMode">—</div>
-        <div id="statError" class="error"></div>
-      </div>
-
+      <div id="err" class="error"></div>
       <div id="list" class="list" style="margin-top:12px"></div>
     </div>
   </div>
 
   <script type="module">
+    // Firebase config (tus credenciales)
     const firebaseConfig = {
   apiKey: "AIzaSyBPNfGVvTJWEim3qgK3rS2PcEaqpej3Dms",
   authDomain: "barbelga-3f021.firebaseapp.com",
@@ -91,9 +85,7 @@
     const dateInput = document.getElementById('dateInput');
     const orderSel = document.getElementById('orderBy');
     const listEl = document.getElementById('list');
-    const statDocs = document.getElementById('statDocs');
-    const statMode = document.getElementById('statMode');
-    const statError = document.getElementById('statError');
+    const errEl = document.getElementById('err');
 
     function pad2(n){ return n.toString().padStart(2,'0'); }
     function ymd(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
@@ -104,9 +96,7 @@
       d.setDate(d.getDate() - diff);
       return d;
     }
-    function startEndOfDay(d){
-      return { start: new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0,0,0), end: new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23,59,59,999) };
-    }
+    function startEndOfDay(d){ return { start: new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0,0,0), end: new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23,59,59,999) }; }
     function parseCreatedAt(row){
       const v = row.createdAt;
       if(v && typeof v.toDate === 'function') return v.toDate();
@@ -114,18 +104,76 @@
       if(typeof v === 'number') return new Date(v);
       return null;
     }
-    function renderRows(rows){
-      if(!rows.length){ listEl.innerHTML = "<div class='muted'>No hay pedidos para este modo.</div>"; return; }
-      listEl.innerHTML = "";
-      const by = orderSel.value;
-      rows.sort((a,b)=>{
-            const at = parseCreatedAt(a)?.getTime() || 0;
-            const bt = parseCreatedAt(b)?.getTime() || 0;
-            return at - bt; // más viejo -> más nuevo
+
+    // Inicializa fecha a jueves más próximo
+    const lastThu = nearestThursday(new Date());
+    dateInput.value = ymd(lastThu);
+
+    modeSel.addEventListener('change', run);
+    orderSel.addEventListener('change', render);
+    dateInput.addEventListener('change', run);
+
+    let unsubscribe = null;
+    let cache = [];
+
+    function run(){
+      if(unsubscribe){ unsubscribe(); unsubscribe = null; }
+      errEl.textContent = "";
+      cache = [];
+
+      const mode = modeSel.value;
+
+      // Consulta mínima, como antes: ORDER BY createdAt DESC y luego ordenamos en cliente.
+      // Esto evita problemas y garantiza datos frescos primero.
+      let qRef;
+      try{
+        qRef = query(collection(db,'orders'), orderBy('createdAt','desc'), limit(200));
+      }catch(e){
+        // Fallback sin orderBy
+        qRef = collection(db, 'orders');
+      }
+
+      unsubscribe = onSnapshot(qRef, (snap)=>{
+        const rows = [];
+        snap.forEach(d => rows.push({ id: d.id, ...d.data() }));
+
+        // Filtro en cliente según modo
+        if(mode === 'today' || mode === 'thursday'){
+          const base = mode === 'today' ? new Date() : new Date(dateInput.value);
+          const {start,end} = startEndOfDay(base);
+          cache = rows.filter(r => {
+            const dt = parseCreatedAt(r);
+            return dt && dt >= start && dt <= end;
           });
-        if(by === "total") return (b.total||0) - (a.total||0);
-        const at = parseCreatedAt(a)?.getTime() || 0; const bt = parseCreatedAt(b)?.getTime() || 0; return bt - at;
+        }else{
+          cache = rows;
+        }
+
+        render();
+      }, (err)=>{
+        console.error(err);
+        errEl.textContent = 'Error leyendo pedidos: ' + err.message;
       });
+    }
+
+    function render(){
+      if(!cache.length){
+        listEl.innerHTML = "<div class='muted'>No hay pedidos en este rango.</div>";
+        return;
+      }
+      const by = orderSel.value;
+      const rows = [...cache];
+
+      if(by === 'arrival'){
+        // ÚNICO requisito: orden de llegada → más viejo a más nuevo
+        rows.sort((a,b)=> (parseCreatedAt(a)?.getTime()||0) - (parseCreatedAt(b)?.getTime()||0) );
+      }else if(by === 'name'){
+        rows.sort((a,b)=> (a.name||'').localeCompare(b.name||''));
+      }else if(by === 'total'){
+        rows.sort((a,b)=> (a.total||0) - (b.total||0));
+      }
+
+      listEl.innerHTML = "";
       rows.forEach(row=>{
         const d = document.createElement("details");
         const completed = row.status === "completed";
@@ -155,63 +203,6 @@
         listEl.appendChild(d);
       });
     }
-
-    let unsubscribe = null;
-    function run(){
-      statError.textContent = "";
-      if(unsubscribe){ unsubscribe(); unsubscribe=null; }
-      const mode = modeSel.value;
-      statMode.textContent = `Modo: ${mode}`;
-
-      if(mode === "live"){
-        // Sin filtros: últimos 200 por createdAt desc (si existe), si no, por name.
-        try{
-          const qRef = query(collection(db,"orders"), orderBy("createdAt","asc"), limit(200));
-          unsubscribe = onSnapshot(qRef,(snap)=>{
-            const rows=[]; snap.forEach(d=>rows.push({id:d.id,...d.data()}));
-            statDocs.textContent = `Documentos recibidos: ${snap.size}`;
-            renderRows(rows);
-          }, err => statError.textContent = err.message);
-        }catch(e){
-          const qRef = collection(db,"orders");
-          unsubscribe = onSnapshot(qRef,(snap)=>{
-            const rows=[]; snap.forEach(d=>rows.push({id:d.id,...d.data()}));
-            statDocs.textContent = `Documentos recibidos (sin orden): ${snap.size}`;
-            renderRows(rows);
-          }, err => statError.textContent = err.message);
-        }
-        return;
-      }
-
-      if(mode === "today" || mode === "thursday"){
-        const base = mode === "today" ? new Date() : new Date(dateInput.value);
-        // Query amplia + filtro en cliente
-        let qRef;
-        try{
-          qRef = query(collection(db,"orders"), orderBy("createdAt","asc"), limit(200));
-        }catch(_){
-          qRef = collection(db,"orders");
-        }
-        unsubscribe = onSnapshot(qRef,(snap)=>{
-          const all=[]; snap.forEach(d=>all.push({id:d.id,...d.data()}));
-          statDocs.textContent = `Documentos recibidos: ${snap.size}`;
-          const {start,end} = startEndOfDay(base);
-          const rows = all.filter(r=>{
-            const dt = parseCreatedAt(r);
-            return dt && dt>=start && dt<=end;
-          });
-          renderRows(rows);
-        }, err => statError.textContent = err.message);
-      }
-    }
-
-    // Init date input (jueves más cercano por comodidad)
-    const lastThu = nearestThursday(new Date());
-    document.getElementById('dateInput').value = ymd(lastThu);
-
-    modeSel.addEventListener('change', run);
-    orderSel.addEventListener('change', run);
-    dateInput.addEventListener('change', run);
 
     run();
   </script>
