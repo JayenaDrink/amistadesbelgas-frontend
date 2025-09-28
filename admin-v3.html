@@ -33,7 +33,7 @@
   <div class="container">
     <header>
       <h1>Amistades Belgas — Pedidos (Admin v3)</h1>
-      <div class="muted">Orden por llegada (más viejo → más nuevo)</div>
+      <div style="display:flex;gap:10px;align-items:center"><div class="muted">Orden por llegada (más viejo → más nuevo)</div><button id="enableAlerts" style="background:transparent;border:1px solid #334155;border-radius:12px;padding:8px 10px;color:#e5e7eb;cursor:pointer">🔔 Activar avisos</button></div>
     </header>
 
     <div class="card">
@@ -76,10 +76,43 @@
   appId: "1:111939067233:web:6af08d6f96a22cb38c3920"
 };
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, query, orderBy, where, limit, updateDoc, doc, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, query, orderBy, where, limit, updateDoc, doc, serverTimestamp, Timestamp, setDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+    import { getMessaging, getToken, isSupported } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging.js";
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+
+    // --- Avisos en admin (in-app) + token opcional para push ---
+    const WORKER_SEND_URL = "https://TU-WORKER.workers.dev/send"; // Cambia por tu Worker real
+    const VAPID_PUBLIC_KEY = "TU_VAPID_PUBLIC_KEY"; // Igual que en el front
+    function toast(msg){
+      const t = document.createElement('div');
+      t.textContent = msg;
+      t.style = "position:fixed;right:12px;bottom:12px;background:#0b1220;border:1px solid #1f2937;padding:10px 12px;border-radius:10px;z-index:9999";
+      document.body.appendChild(t); setTimeout(()=>t.remove(), 3000);
+    }
+    function beep(){
+      try{ const ctx=new (window.AudioContext||window.webkitAudioContext)(); const o=ctx.createOscillator(); const g=ctx.createGain(); o.type='sine'; o.frequency.value=880; o.connect(g); g.connect(ctx.destination); g.gain.setValueAtTime(0.0001, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime+0.01); o.start(); setTimeout(()=>{ g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+0.2); o.stop(ctx.currentTime+0.25); }, 200);}catch(_){}
+    }
+
+    const enableBtn = document.getElementById('enableAlerts');
+    enableBtn.addEventListener('click', async ()=>{
+      try{
+        if (!(await isSupported())){ toast("Este navegador no soporta Push"); return; }
+        const reg = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
+        const messaging = getMessaging(app);
+        const token = await getToken(messaging, { vapidKey: VAPID_PUBLIC_KEY, serviceWorkerRegistration: reg });
+        if(token){
+          await setDoc(doc(db, "adminTokens", token), { createdAt: serverTimestamp(), ua: navigator.userAgent });
+          toast("Avisos activados");
+        } else {
+          toast("No se obtuvo token");
+        }
+      }catch(e){ toast("Error activando avisos: " + e.message); }
+    });
+
+    // Detectar nuevos pedidos (solo cuando estamos en modo 'live' o 'today'/'thursday' tras cada snapshot)
+    let knownIds = new Set();
 
     const modeSel = document.getElementById('mode');
     const dateInput = document.getElementById('dateInput');
@@ -197,6 +230,16 @@
         btn.addEventListener("click", async (e)=>{
           e.stopPropagation();
           await updateDoc(doc(db,"orders",row.id), { status: completed ? "pending" : "completed", updatedAt: serverTimestamp(), completedAt: completed ? null : serverTimestamp() });
+          // Notificar al cliente si hay token
+          try{
+            const clientToken = row.clientToken;
+            if(clientToken && !completed){
+              await fetch(WORKER_SEND_URL, {
+                method: 'POST', headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ tokens:[clientToken], notification:{ title:"✅ Pedido listo", body: (row.name||"") } })
+              });
+            }
+          }catch(e){ console.warn("No se pudo notificar al cliente:", e); }
         });
         actions.appendChild(btn);
         d.appendChild(s); d.appendChild(content); d.appendChild(actions);
