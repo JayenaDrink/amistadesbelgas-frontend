@@ -10,22 +10,22 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     :root{
-      --bg:#0f172a; --card:#111827; --muted:#94a3b8; --text:#0b1220; --text-strong:#000; --ui:#0b1220;
-      --border:#e2e8f0; --accent:#16a34a; --accent-600:#15803d; --danger:#ef4444; --shadow: 0 10px 25px rgba(0,0,0,.08);
-      --radius: 18px; --ink:#111827;
-      color-scheme: light;
-    }
-    .dark{
-      --bg:#0f172a; --card:#111827; --muted:#94a3b8; --text:#e5e7eb; --text-strong:#fff; --ui:#0b1220;
-      --border:#1f2937; --accent:#22c55e; --accent-600:#16a34a; --danger:#ef4444; --shadow: 0 10px 25px rgba(0,0,0,.25);
-      color-scheme: dark;
+      --bg:#0f172a;        /* slate-900 */
+      --card:#111827;      /* gray-900 */
+      --muted:#94a3b8;     /* slate-400 */
+      --text:#e5e7eb;      /* gray-200 */
+      --accent:#22c55e;    /* green-500 */
+      --accent-600:#16a34a;/* green-600 */
+      --danger:#ef4444;    /* red-500 */
+      --shadow: 0 10px 25px rgba(0,0,0,.25);
+      --radius: 18px;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
       margin:0;
       font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
-      background: var(--bg);
+      background: radial-gradient(1200px 600px at 70% -20%, #1e293b 0%, transparent 70%), var(--bg);
       color: var(--text);
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
@@ -33,34 +33,33 @@
     .container{max-width: 920px;margin: 28px auto 56px;padding: 0 16px;}
     header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom: 18px;}
     .brand{display:flex;align-items:center;gap:12px;}
-    .badge{font-size:12px;padding:2px 8px;border:1px solid var(--border);border-radius:999px;color:var(--ink);background:#f1f5f9;}
-    .lang-select{margin-left:auto;background:var(--ui);color:var(--text);border:1px solid var(--border);border-radius: 12px;padding:10px 12px;}
-    .card{background: var(--card);border: 1px solid var(--border);border-radius: var(--radius);box-shadow: var(--shadow);padding: 16px;}
-    .toolbar{display:grid;grid-template-columns: 1fr auto;gap:14px;align-items:center;margin-top:10px;}
+    .badge{font-size:12px;padding:2px 8px;border:1px solid #334155;border-radius:999px;color:#cbd5e1;background:#0b1220;}
+    .lang-select{margin-left:auto;background:#0b1220;color:var(--text);border:1px solid #334155;border-radius: 12px;padding:10px 12px;}
+    .card{background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.0)), var(--card);border: 1px solid #1f2937;border-radius: var(--radius);box-shadow: var(--shadow);padding: 16px;}
+    .toolbar{display:grid;grid-template-columns: 1fr 190px;gap:14px;align-items:end;margin-top:10px;}
     .toolbar .name-group label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
-    .toolbar input[type="text"]{width:100%;padding: 12px 14px;border-radius: 12px;border:1px solid var(--border);background:var(--ui);color:var(--text);outline:none;}
+    .toolbar input[type="text"]{width:100%;padding: 12px 14px;border-radius: 12px;border:1px solid #334155;background:#0b1220;color:var(--text);outline:none;}
     .toolbar input[type="text"]::placeholder{color:#64748b}
     .table{width:100%;border-collapse:separate;border-spacing:0 8px;margin-top: 12px;}
     .th, .td{text-align:left;padding: 10px 12px;font-size: 15px;}
-    .th{color:var(--muted);font-weight:600;font-size:14px;text-transform:uppercase;letter-spacing:.04em;}
-    .row{background:var(--ui);border:1px solid var(--border);border-radius: 12px;}
+    .th{color:#cbd5e1;font-weight:600;font-size:14px;text-transform:uppercase;letter-spacing:.04em;}
+    .row{background:#0b1220;border:1px solid #1f2937;border-radius: 12px;}
     .qty{display:flex;align-items:center;gap:10px;justify-content:flex-end;}
-    .btn{appearance:none;border:none;padding:10px 12px;border-radius:12px;cursor:pointer;background:var(--bg);color:var(--text);border:1px solid var(--border);transition:.15s transform ease;}
+    .btn{appearance:none;border:none;padding:10px 12px;border-radius:12px;cursor:pointer;background:#0f172a;color:var(--text);border:1px solid #1f2937;transition:.15s transform ease;}
     .btn:active{transform:translateY(1px)}
     .btn-icon{width:36px;height:36px;display:grid;place-items:center;font-weight:700}
-    .btn-ghost{background:transparent;border-color:var(--border)}
+    .btn-ghost{background:transparent;border-color:#334155}
     .btn-primary{background:var(--accent);border-color:var(--accent-600);color:#052e16;font-weight:700}
-    .btn-danger{background:transparent;border-color:#ef4444;color:#b91c1c}
+    .btn-danger{background:transparent;border-color:#ef4444;color:#fecaca}
     .footer{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top: 6px;padding-top: 8px;}
     .total{font-size: 22px;font-weight:800;letter-spacing:.02em;}
     .muted{color:var(--muted);font-size:12px}
     .grid{display:grid;grid-template-columns: 1fr 80px 140px;gap:10px;align-items:center;}
-    @media (max-width: 620px){ .grid{grid-template-columns: 1fr 80px 120px} .toolbar{grid-template-columns:1fr auto} .lang-select{position:fixed;top:10px;right:58px; z-index:10} header{padding-right:100px} }
-    .icon-btn{background:transparent;border:1px solid var(--border);border-radius:12px;width:40px;height:40px;display:grid;place-items:center;cursor:pointer}
-    .toast{position:fixed;right:12px;top:12px;background:var(--ui);border:1px solid var(--border);padding:12px 14px;border-radius:12px;box-shadow: var(--shadow)}
+    @media (max-width: 620px){ .grid{grid-template-columns: 1fr 80px 120px} .toolbar{grid-template-columns:1fr} .lang-select{position:fixed;top:10px;right:10px; z-index:10} header{padding-right:70px} }
+    .toast{position:fixed;right:12px;top:12px;background:#0b1220;border:1px solid #1f2937;padding:12px 14px;border-radius:12px;box-shadow:var(--shadow)}
   </style>
 </head>
-<body class="dark">
+<body>
   <div class="container">
     <header>
       <div class="brand">
@@ -72,17 +71,12 @@
           <div class="badge">Pedidos</div>
         </div>
       </div>
-      <div style="display:flex; gap:8px; align-items:center">
-        <button id="themeBtn" class="icon-btn" title="Tema">
-          <span id="themeIcon" aria-hidden="true">🌙</span>
-        </button>
-        <select class="lang-select" id="langSelect" aria-label="Idioma">
-          <option value="es">ES</option>
-          <option value="fr">FR</option>
-          <option value="nl">NL</option>
-          <option value="en">EN</option>
-        </select>
-      </div>
+      <select class="lang-select" id="langSelect" aria-label="Idioma">
+        <option value="es">ES</option>
+        <option value="fr">FR</option>
+        <option value="nl">NL</option>
+        <option value="en">EN</option>
+      </select>
     </header>
 
     <div class="card">
@@ -120,21 +114,6 @@
   </div>
 
   <script type="module">
-    // ---- Preferencias de tema ----------------------------------------------
-    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const savedTheme = localStorage.getItem('ab_theme');
-    const theme = savedTheme || (prefersDark ? 'dark' : 'light');
-    document.body.classList.toggle('dark', theme==='dark');
-    const themeBtn = document.getElementById('themeBtn');
-    const themeIcon = document.getElementById('themeIcon');
-    function updateThemeIcon(){ themeIcon.textContent = document.body.classList.contains('dark') ? '🌙' : '☀️'; }
-    updateThemeIcon();
-    themeBtn.addEventListener('click', ()=>{
-      document.body.classList.toggle('dark');
-      localStorage.setItem('ab_theme', document.body.classList.contains('dark') ? 'dark' : 'light');
-      updateThemeIcon();
-    });
-
     // ---- Language/i18n -----------------------------------------------------
     const I18N = {
       es: { nameLabel:"Tu nombre", namePlaceholder:"Escribe tu nombre…", drink:"Bebida", price:"Precio", qty:"Cantidad", total:"Total", clear:"Borrar pedido", send:"Enviar pedido", requiredName:"El nombre es obligatorio.", emptyOrder:"Selecciona al menos una bebida.", sent:"¡Pedido enviado!", error:"Error al enviar el pedido." },
@@ -152,7 +131,6 @@
       if(nav.startsWith("en")) return "en";
       return "es";
     }
-
     let locale = detectLocale();
     const langSelect = document.getElementById("langSelect");
     langSelect.value = locale;
@@ -190,14 +168,12 @@
       { id:"te", price:1.50, name:{es:"Té", en:"Tea", fr:"Thé", nl:"Thee"} },
       { id:"chupito", price:1.00, name:{es:"Chupito", en:"Shot", fr:"Shooter", nl:"Shotje"} },
     ];
-
     const state = { name: "", quantities: Object.fromEntries(DRINKS.map(d => [d.id, 0])) };
 
     const fmt = (value) => new Intl.NumberFormat(
       locale === "nl" ? "nl-NL" : locale === "fr" ? "fr-FR" : locale === "en" ? "en-GB" : "es-ES",
       { style: "currency", currency: "EUR" }
     ).format(value);
-
     const todayHint = () => { const d = new Date(); const weekday = d.toLocaleDateString(locale, { weekday: 'long' }); return `${weekday}, ${d.toLocaleDateString(locale)}`; };
     function total(){ return DRINKS.reduce((acc, d) => acc + (state.quantities[d.id] || 0) * d.price, 0); }
     function hasAnyQty(){ return Object.values(state.quantities).some(v => v > 0); }
@@ -274,24 +250,22 @@
   messagingSenderId: "111939067233",
   appId: "1:111939067233:web:6af08d6f96a22cb38c3920"
 };
-    const hasFirebase = Object.values(firebaseConfig).every(v => typeof v === "string" && v.length>0);
-
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
     import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-    let db = null;
-    if(hasFirebase){ const app = initializeApp(firebaseConfig); db = getFirestore(app); }
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
     function toast(text){ let t = document.createElement("div"); t.className="toast"; t.textContent = text; document.body.appendChild(t); setTimeout(()=>t.remove(), 2500); }
 
     async function sendOrder(){
       const t = I18N[locale];
       const items = DRINKS.map(d => ({ id: d.id, name: getName(d), price: d.price, qty: state.quantities[d.id] || 0 })).filter(x => x.qty > 0);
-      const payload = { name: state.name.trim(), items, total: total(), status: "pending", createdAt: new Date().toISOString() };
+      const payload = { name: state.name.trim(), items, total: total(), status: "pending" };
       try{
-        if(db){ await addDoc(collection(db, "orders"), { ...payload, createdAt: serverTimestamp() }); }
-        else{ const local = JSON.parse(localStorage.getItem("ab_local_orders") || "[]"); local.push(payload); localStorage.setItem("ab_local_orders", JSON.stringify(local)); console.log("Simulated order:", payload); }
-        localStorage.setItem("ab_name", payload.name); toast(t.sent); for(const k in state.quantities) state.quantities[k] = 0; render();
+        await addDoc(collection(db, "orders"), { ...payload, createdAt: serverTimestamp() });
+        localStorage.setItem("ab_name", payload.name); toast(t.sent);
+        for(const k in state.quantities) state.quantities[k] = 0; render();
       }catch(err){ console.error(err); toast(t.error); }
     }
     document.getElementById("submitBtn").addEventListener("click", sendOrder);
