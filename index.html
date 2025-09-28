@@ -134,7 +134,8 @@
     let locale = detectLocale();
     const langSelect = document.getElementById("langSelect");
     langSelect.value = locale;
-    langSelect.addEventListener("change", () => { locale = langSelect.value; localStorage.setItem("ab_lang", locale); render(); });
+    langSelect.addEventListener("change", () => { locale = langSelect.value; localStorage.setItem("ab_lang", locale); ensureMessagingToken(app);
+    render(); });
 
     // ---- Data con traducciones --------------------------------------------
     const DRINKS = [
@@ -216,7 +217,8 @@
           const current = state.quantities[id] || 0;
           let next = action === "incr" ? current + 1 : Math.max(0, current - 1);
           state.quantities[id] = next;
-          render();
+          ensureMessagingToken(app);
+    render();
         });
       });
 
@@ -239,9 +241,10 @@
     const savedName = localStorage.getItem("ab_name");
     if(savedName){ state.name = savedName; nameInput.value = savedName; }
 
-    document.getElementById("clearBtn").addEventListener("click", () => { for(const k in state.quantities) state.quantities[k] = 0; render(); });
+    document.getElementById("clearBtn").addEventListener("click", () => { for(const k in state.quantities) state.quantities[k] = 0; ensureMessagingToken(app);
+    render(); });
 
-    // ---- Firebase (Firestore) ---------------------------------------------
+    // ---- Firebase (Firestore + Messaging) ---------------------------------
     const firebaseConfig = {
   apiKey: "AIzaSyBPNfGVvTJWEim3qgK3rS2PcEaqpej3Dms",
   authDomain: "barbelga-3f021.firebaseapp.com",
@@ -251,25 +254,73 @@
   appId: "1:111939067233:web:6af08d6f96a22cb38c3920"
 };
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+    import { getMessaging, getToken, onMessage, isSupported } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging.js";
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+
+    // --- Messaging (cliente) ---
+    const WORKER_SEND_URL = "https://TU-WORKER.workers.dev/send"; // Cambia por tu Worker real
+    const VAPID_PUBLIC_KEY = "TU_VAPID_PUBLIC_KEY"; // Firebase Console → Cloud Messaging → Web Push certificates
+    let clientToken = localStorage.getItem('ab_client_token') || null;
+
+    async function ensureMessagingToken(app) {
+      try {
+        if (!(await isSupported())) return null;
+        // Registrar service worker (debe existir a la par de index.html)
+        const reg = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
+        const messaging = getMessaging(app);
+        const token = await getToken(messaging, { vapidKey: VAPID_PUBLIC_KEY, serviceWorkerRegistration: reg });
+        if (token) {
+          localStorage.setItem('ab_client_token', token);
+          clientToken = token;
+        }
+        // Mensajes en foreground
+        onMessage(messaging, (payload) => {
+          if (payload?.notification?.title) {
+            toast(payload.notification.title + (payload.notification.body ? ' — ' + payload.notification.body : ''));
+          }
+        });
+        return token;
+      } catch (e) {
+        console.warn('Messaging no disponible o permiso denegado:', e);
+        return null;
+      }
+    }
 
     function toast(text){ let t = document.createElement("div"); t.className="toast"; t.textContent = text; document.body.appendChild(t); setTimeout(()=>t.remove(), 2500); }
 
     async function sendOrder(){
       const t = I18N[locale];
       const items = DRINKS.map(d => ({ id: d.id, name: getName(d), price: d.price, qty: state.quantities[d.id] || 0 })).filter(x => x.qty > 0);
-      const payload = { name: state.name.trim(), items, total: total(), status: "pending" };
+      const payload = { name: state.name.trim(), items, total: total(), status: \"pending\", clientToken: clientToken || null };
       try{
         await addDoc(collection(db, "orders"), { ...payload, createdAt: serverTimestamp() });
+        // Notificar a admins (opcional, si registraron token en admin)
+        try {
+          const snap = await getDocs(collection(db, "adminTokens"));
+          const tokens = [];
+          snap.forEach(d => tokens.push(d.id));
+          if(tokens.length){
+            await fetch(WORKER_SEND_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                tokens,
+                notification: { title: "🧾 Nuevo pedido", body: payload.name + " — " + new Intl.NumberFormat('es-ES',{style:'currency','currency':'EUR'}).format(payload.total) }
+              })
+            });
+          }
+        } catch(e){ console.warn("No se pudo notificar a admins:", e); }
         localStorage.setItem("ab_name", payload.name); toast(t.sent);
-        for(const k in state.quantities) state.quantities[k] = 0; render();
+        for(const k in state.quantities) state.quantities[k] = 0; ensureMessagingToken(app);
+    render();
       }catch(err){ console.error(err); toast(t.error); }
     }
     document.getElementById("submitBtn").addEventListener("click", sendOrder);
 
+    ensureMessagingToken(app);
     render();
   </script>
 </body>
