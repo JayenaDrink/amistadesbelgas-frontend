@@ -10,132 +10,57 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     :root{
-      --bg:#0f172a;        /* slate-900 */
-      --card:#111827;      /* gray-900 */
-      --muted:#94a3b8;     /* slate-400 */
-      --text:#e5e7eb;      /* gray-200 */
-      --accent:#22c55e;    /* green-500 */
-      --accent-600:#16a34a;/* green-600 */
-      --danger:#ef4444;    /* red-500 */
-      --shadow: 0 10px 25px rgba(0,0,0,.25);
-      --radius: 18px;
+      --bg:#0f172a; --card:#111827; --muted:#94a3b8; --text:#0b1220; --text-strong:#000; --ui:#0b1220;
+      --border:#e2e8f0; --accent:#16a34a; --accent-600:#15803d; --danger:#ef4444; --shadow: 0 10px 25px rgba(0,0,0,.08);
+      --radius: 18px; --ink:#111827;
+      color-scheme: light;
+    }
+    .dark{
+      --bg:#0f172a; --card:#111827; --muted:#94a3b8; --text:#e5e7eb; --text-strong:#fff; --ui:#0b1220;
+      --border:#1f2937; --accent:#22c55e; --accent-600:#16a34a; --danger:#ef4444; --shadow: 0 10px 25px rgba(0,0,0,.25);
+      color-scheme: dark;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
       margin:0;
       font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
-      background: radial-gradient(1200px 600px at 70% -20%, #1e293b 0%, transparent 70%), var(--bg);
+      background: var(--bg);
       color: var(--text);
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
-    .container{
-      max-width: 920px;
-      margin: 28px auto 56px;
-      padding: 0 16px;
-    }
-    header{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      margin-bottom: 18px;
-    }
-    .brand{
-      display:flex;align-items:center;gap:12px;
-    }
-    .badge{
-      font-size:12px;
-      padding:2px 8px;border:1px solid #334155;border-radius:999px;color:#cbd5e1;background:#0b1220;
-    }
-    .lang-select{
-      margin-left:auto;
-      background:#0b1220;
-      color:var(--text);
-      border:1px solid #334155;
-      border-radius: 12px;
-      padding:10px 12px;
-    }
-    .card{
-      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.0)), var(--card);
-      border: 1px solid #1f2937;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 16px;
-    }
-    .toolbar{
-      display:grid;grid-template-columns: 1fr 190px;gap:14px;align-items:end;margin-top:10px;
-    }
+    .container{max-width: 920px;margin: 28px auto 56px;padding: 0 16px;}
+    header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom: 18px;}
+    .brand{display:flex;align-items:center;gap:12px;}
+    .badge{font-size:12px;padding:2px 8px;border:1px solid var(--border);border-radius:999px;color:var(--ink);background:#f1f5f9;}
+    .lang-select{margin-left:auto;background:var(--ui);color:var(--text);border:1px solid var(--border);border-radius: 12px;padding:10px 12px;}
+    .card{background: var(--card);border: 1px solid var(--border);border-radius: var(--radius);box-shadow: var(--shadow);padding: 16px;}
+    .toolbar{display:grid;grid-template-columns: 1fr auto;gap:14px;align-items:center;margin-top:10px;}
     .toolbar .name-group label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
-    .toolbar input[type="text"]{
-      width:100%;
-      padding: 12px 14px;
-      border-radius: 12px;
-      border:1px solid #334155;
-      background:#0b1220;
-      color:var(--text);
-      outline:none;
-    }
+    .toolbar input[type="text"]{width:100%;padding: 12px 14px;border-radius: 12px;border:1px solid var(--border);background:var(--ui);color:var(--text);outline:none;}
     .toolbar input[type="text"]::placeholder{color:#64748b}
-    .table{
-      width:100%;
-      border-collapse:separate;
-      border-spacing:0 8px;
-      margin-top: 12px;
-    }
-    .th, .td{
-      text-align:left;
-      padding: 10px 12px;
-      font-size: 15px;
-    }
-    .th{
-      color:#cbd5e1;
-      font-weight:600;
-      font-size:14px;
-      text-transform:uppercase;
-      letter-spacing:.04em;
-    }
-    .row{
-      background:#0b1220;
-      border:1px solid #1f2937;
-      border-radius: 12px;
-    }
-    .qty{
-      display:flex;align-items:center;gap:10px;justify-content:flex-end;
-    }
-    .btn{
-      appearance:none;border:none;padding:10px 12px;border-radius:12px;cursor:pointer;
-      background:#0f172a;color:var(--text);border:1px solid #1f2937;
-      transition:.15s transform ease;
-    }
+    .table{width:100%;border-collapse:separate;border-spacing:0 8px;margin-top: 12px;}
+    .th, .td{text-align:left;padding: 10px 12px;font-size: 15px;}
+    .th{color:var(--muted);font-weight:600;font-size:14px;text-transform:uppercase;letter-spacing:.04em;}
+    .row{background:var(--ui);border:1px solid var(--border);border-radius: 12px;}
+    .qty{display:flex;align-items:center;gap:10px;justify-content:flex-end;}
+    .btn{appearance:none;border:none;padding:10px 12px;border-radius:12px;cursor:pointer;background:var(--bg);color:var(--text);border:1px solid var(--border);transition:.15s transform ease;}
     .btn:active{transform:translateY(1px)}
     .btn-icon{width:36px;height:36px;display:grid;place-items:center;font-weight:700}
-    .btn-ghost{background:transparent;border-color:#334155}
+    .btn-ghost{background:transparent;border-color:var(--border)}
     .btn-primary{background:var(--accent);border-color:var(--accent-600);color:#052e16;font-weight:700}
-    .btn-danger{background:transparent;border-color:#ef4444;color:#fecaca}
-    .footer{
-      display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top: 6px;padding-top: 8px;
-    }
-    .total{
-      font-size: 22px;font-weight:800;letter-spacing:.02em;
-    }
+    .btn-danger{background:transparent;border-color:#ef4444;color:#b91c1c}
+    .footer{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top: 6px;padding-top: 8px;}
+    .total{font-size: 22px;font-weight:800;letter-spacing:.02em;}
     .muted{color:var(--muted);font-size:12px}
-    .grid{
-      display:grid;grid-template-columns: 1fr 80px 140px;gap:10px;align-items:center;
-    }
-    @media (max-width: 620px){
-      .grid{grid-template-columns: 1fr 80px 120px}
-      .toolbar{grid-template-columns:1fr}
-      .lang-select{position:fixed;top:10px;right:10px; z-index:10}
-      header{padding-right:70px}
-    }
-    .toast{
-      position:fixed;right:12px;top:12px;background:#0b1220;border:1px solid #1f2937;padding:12px 14px;border-radius:12px;box-shadow:var(--shadow)
-    }
+    .grid{display:grid;grid-template-columns: 1fr 80px 140px;gap:10px;align-items:center;}
+    @media (max-width: 620px){ .grid{grid-template-columns: 1fr 80px 120px} .toolbar{grid-template-columns:1fr auto} .lang-select{position:fixed;top:10px;right:58px; z-index:10} header{padding-right:100px} }
+    .icon-btn{background:transparent;border:1px solid var(--border);border-radius:12px;width:40px;height:40px;display:grid;place-items:center;cursor:pointer}
+    .toast{position:fixed;right:12px;top:12px;background:var(--ui);border:1px solid var(--border);padding:12px 14px;border-radius:12px;box-shadow: var(--shadow)}
   </style>
 </head>
-<body>
+<body class="dark">
   <div class="container">
     <header>
       <div class="brand">
@@ -147,12 +72,17 @@
           <div class="badge">Pedidos</div>
         </div>
       </div>
-      <select class="lang-select" id="langSelect" aria-label="Idioma">
-        <option value="es">ES</option>
-        <option value="fr">FR</option>
-        <option value="nl">NL</option>
-        <option value="en">EN</option>
-      </select>
+      <div style="display:flex; gap:8px; align-items:center">
+        <button id="themeBtn" class="icon-btn" title="Tema">
+          <span id="themeIcon" aria-hidden="true">🌙</span>
+        </button>
+        <select class="lang-select" id="langSelect" aria-label="Idioma">
+          <option value="es">ES</option>
+          <option value="fr">FR</option>
+          <option value="nl">NL</option>
+          <option value="en">EN</option>
+        </select>
+      </div>
     </header>
 
     <div class="card">
@@ -189,66 +119,28 @@
     </div>
   </div>
 
-  <!-- Firebase SDKs from CDN (v9 modular) -->
   <script type="module">
+    // ---- Preferencias de tema ----------------------------------------------
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const savedTheme = localStorage.getItem('ab_theme');
+    const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+    document.body.classList.toggle('dark', theme==='dark');
+    const themeBtn = document.getElementById('themeBtn');
+    const themeIcon = document.getElementById('themeIcon');
+    function updateThemeIcon(){ themeIcon.textContent = document.body.classList.contains('dark') ? '🌙' : '☀️'; }
+    updateThemeIcon();
+    themeBtn.addEventListener('click', ()=>{
+      document.body.classList.toggle('dark');
+      localStorage.setItem('ab_theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+      updateThemeIcon();
+    });
+
     // ---- Language/i18n -----------------------------------------------------
     const I18N = {
-      es: {
-        nameLabel: "Tu nombre",
-        namePlaceholder: "Escribe tu nombre…",
-        drink: "Bebida",
-        price: "Precio",
-        qty: "Cantidad",
-        total: "Total",
-        clear: "Borrar pedido",
-        send: "Enviar pedido",
-        requiredName: "El nombre es obligatorio.",
-        emptyOrder: "Selecciona al menos una bebida.",
-        sent: "¡Pedido enviado!",
-        error: "Error al enviar el pedido.",
-      },
-      en: {
-        nameLabel: "Your name",
-        namePlaceholder: "Type your name…",
-        drink: "Drink",
-        price: "Price",
-        qty: "Qty",
-        total: "Total",
-        clear: "Clear order",
-        send: "Send order",
-        requiredName: "Name is required.",
-        emptyOrder: "Pick at least one drink.",
-        sent: "Order sent!",
-        error: "Failed to send order.",
-      },
-      fr: {
-        nameLabel: "Votre prénom",
-        namePlaceholder: "Écrivez votre prénom…",
-        drink: "Boisson",
-        price: "Prix",
-        qty: "Qté",
-        total: "Total",
-        clear: "Effacer la commande",
-        send: "Envoyer la commande",
-        requiredName: "Le prénom est obligatoire.",
-        emptyOrder: "Choisissez au moins une boisson.",
-        sent: "Commande envoyée !",
-        error: "Échec de l'envoi de la commande.",
-      },
-      nl: {
-        nameLabel: "Je naam",
-        namePlaceholder: "Vul je naam in…",
-        drink: "Drank",
-        price: "Prijs",
-        qty: "Aantal",
-        total: "Totaal",
-        clear: "Bestelling wissen",
-        send: "Bestelling verzenden",
-        requiredName: "Naam is verplicht.",
-        emptyOrder: "Kies minstens één drankje.",
-        sent: "Bestelling verzonden!",
-        error: "Verzenden mislukt.",
-      }
+      es: { nameLabel:"Tu nombre", namePlaceholder:"Escribe tu nombre…", drink:"Bebida", price:"Precio", qty:"Cantidad", total:"Total", clear:"Borrar pedido", send:"Enviar pedido", requiredName:"El nombre es obligatorio.", emptyOrder:"Selecciona al menos una bebida.", sent:"¡Pedido enviado!", error:"Error al enviar el pedido." },
+      en: { nameLabel:"Your name", namePlaceholder:"Type your name…", drink:"Drink", price:"Price", qty:"Qty", total:"Total", clear:"Clear order", send:"Send order", requiredName:"Name is required.", emptyOrder:"Pick at least one drink.", sent:"Order sent!", error:"Failed to send order." },
+      fr: { nameLabel:"Votre prénom", namePlaceholder:"Écrivez votre prénom…", drink:"Boisson", price:"Prix", qty:"Qté", total:"Total", clear:"Effacer la commande", send:"Envoyer la commande", requiredName:"Le prénom est obligatoire.", emptyOrder:"Choisissez au moins une boisson.", sent:"Commande envoyée !", error:"Échec de l'envoi de la commande." },
+      nl: { nameLabel:"Je naam", namePlaceholder:"Vul je naam in…", drink:"Drank", price:"Prijs", qty:"Aantal", total:"Totaal", clear:"Bestelling wissen", send:"Bestelling verzenden", requiredName:"Naam is verplicht.", emptyOrder:"Kies minstens één drankje.", sent:"Bestelling verzonden!", error:"Verzenden mislukt." }
     };
 
     function detectLocale(){
@@ -264,76 +156,54 @@
     let locale = detectLocale();
     const langSelect = document.getElementById("langSelect");
     langSelect.value = locale;
-    langSelect.addEventListener("change", () => {
-      locale = langSelect.value;
-      localStorage.setItem("ab_lang", locale);
-      render();
-    });
+    langSelect.addEventListener("change", () => { locale = langSelect.value; localStorage.setItem("ab_lang", locale); render(); });
 
-    // ---- Data --------------------------------------------------------------
-    // Prices in EUR
+    // ---- Data con traducciones --------------------------------------------
     const DRINKS = [
-      { id:"agua_sin_gas", name:"Agua sin gas", price:1.00 },
-      { id:"agua_con_gas", name:"Agua con gas", price:1.00 },
-      { id:"coca_cola", name:"Coca Cola", price:1.50 },
-      { id:"coca_cola_zero", name:"Coca Cola Zero", price:1.50 },
-      { id:"fanta_naranja", name:"Fanta Naranja", price:1.50 },
-      { id:"fanta_limon", name:"Fanta Limón", price:1.50 },
-      { id:"nestea", name:"Nestea", price:1.50 },
-      { id:"tonica", name:"Tónica", price:1.50 },
-      { id:"bitter_kas", name:"Bitter Kas", price:1.50 },
-      { id:"cerveza", name:"Cerveza", price:1.50 },
-      { id:"cerveza_sin_alcohol", name:"Cerveza Sin Alcohol", price:1.50 },
-      { id:"leffe_bl", name:"Leffe bl", price:2.50 },
-      { id:"duvel", name:"Duvel", price:2.50 },
-      { id:"omer", name:"Omer", price:2.50 },
-      { id:"chimay_blauw", name:"Chimay Blauw", price:3.00 },
-      { id:"kriek", name:"Kriek", price:2.50 },
-      { id:"vino_tinto", name:"Vino Tinto (copa)", price:7.50 },
-      { id:"vino_blanco", name:"Vino blanco (copa)", price:7.50 },
-      { id:"vino_rosado", name:"Vino Rosado (copa)", price:7.00 },
-      { id:"botella_vino", name:"Botella vino", price:9.00 },
-      { id:"cava_pequeno", name:"Cava pequeño", price:2.50 },
-      { id:"cava_grande", name:"Cava Grande", price:11.00 },
-      { id:"whisky", name:"Whisky", price:2.50 },
-      { id:"cognac", name:"Cognac", price:2.50 },
-      { id:"gin", name:"Gin", price:2.50 },
-      { id:"vodka", name:"Vodka", price:2.50 },
-      { id:"cafe", name:"Café", price:1.50 },
-      { id:"te", name:"Té", price:1.50 },
-      { id:"chupito", name:"Chupito", price:1.00 },
+      { id:"agua_sin_gas", price:1.00, name:{es:"Agua sin gas", en:"Still water", fr:"Eau plate", nl:"Plat water"} },
+      { id:"agua_con_gas", price:1.00, name:{es:"Agua con gas", en:"Sparkling water", fr:"Eau gazeuse", nl:"Bruiswater"} },
+      { id:"coca_cola", price:1.50, name:{es:"Coca Cola", en:"Coca‑Cola", fr:"Coca‑Cola", nl:"Coca‑Cola"} },
+      { id:"coca_cola_zero", price:1.50, name:{es:"Coca Cola Zero", en:"Coca‑Cola Zero", fr:"Coca‑Cola Zéro", nl:"Coca‑Cola Zero"} },
+      { id:"fanta_naranja", price:1.50, name:{es:"Fanta Naranja", en:"Fanta Orange", fr:"Fanta Orange", nl:"Fanta Sinaas"} },
+      { id:"fanta_limon", price:1.50, name:{es:"Fanta Limón", en:"Fanta Lemon", fr:"Fanta Citron", nl:"Fanta Citroen"} },
+      { id:"nestea", price:1.50, name:{es:"Nestea", en:"Nestea", fr:"Nestea", nl:"Nestea"} },
+      { id:"tonica", price:1.50, name:{es:"Tónica", en:"Tonic", fr:"Tonic", nl:"Tonic"} },
+      { id:"bitter_kas", price:1.50, name:{es:"Bitter Kas", en:"Bitter Kas", fr:"Bitter Kas", nl:"Bitter Kas"} },
+      { id:"cerveza", price:1.50, name:{es:"Cerveza", en:"Beer", fr:"Bière", nl:"Bier"} },
+      { id:"cerveza_sin_alcohol", price:1.50, name:{es:"Cerveza Sin Alcohol", en:"Alcohol‑free beer", fr:"Bière sans alcool", nl:"Alcoholvrij bier"} },
+      { id:"leffe_bl", price:2.50, name:{es:"Leffe rubia", en:"Leffe Blond", fr:"Leffe Blonde", nl:"Leffe Blond"} },
+      { id:"duvel", price:2.50, name:{es:"Duvel", en:"Duvel", fr:"Duvel", nl:"Duvel"} },
+      { id:"omer", price:2.50, name:{es:"Omer", en:"Omer", fr:"Omer", nl:"Omer"} },
+      { id:"chimay_blauw", price:3.00, name:{es:"Chimay Azul", en:"Chimay Blue", fr:"Chimay Bleue", nl:"Chimay Blauw"} },
+      { id:"kriek", price:2.50, name:{es:"Kriek", en:"Kriek", fr:"Kriek", nl:"Kriek"} },
+      { id:"vino_tinto", price:7.50, name:{es:"Vino Tinto (copa)", en:"Red wine (glass)", fr:"Vin rouge (verre)", nl:"Rode wijn (glas)"} },
+      { id:"vino_blanco", price:7.50, name:{es:"Vino blanco (copa)", en:"White wine (glass)", fr:"Vin blanc (verre)", nl:"Witte wijn (glas)"} },
+      { id:"vino_rosado", price:7.00, name:{es:"Vino Rosado (copa)", en:"Rosé wine (glass)", fr:"Vin rosé (verre)", nl:"Rosé (glas)"} },
+      { id:"botella_vino", price:9.00, name:{es:"Botella vino", en:"Bottle of wine", fr:"Bouteille de vin", nl:"Fles wijn"} },
+      { id:"cava_pequeno", price:2.50, name:{es:"Cava pequeño", en:"Cava small", fr:"Cava petit", nl:"Cava klein"} },
+      { id:"cava_grande", price:11.00, name:{es:"Cava Grande", en:"Cava large", fr:"Cava grand", nl:"Cava groot"} },
+      { id:"whisky", price:2.50, name:{es:"Whisky", en:"Whisky", fr:"Whisky", nl:"Whisky"} },
+      { id:"cognac", price:2.50, name:{es:"Cognac", en:"Cognac", fr:"Cognac", nl:"Cognac"} },
+      { id:"gin", price:2.50, name:{es:"Gin", en:"Gin", fr:"Gin", nl:"Gin"} },
+      { id:"vodka", price:2.50, name:{es:"Vodka", en:"Vodka", fr:"Vodka", nl:"Vodka"} },
+      { id:"cafe", price:1.50, name:{es:"Café", en:"Coffee", fr:"Café", nl:"Koffie"} },
+      { id:"te", price:1.50, name:{es:"Té", en:"Tea", fr:"Thé", nl:"Thee"} },
+      { id:"chupito", price:1.00, name:{es:"Chupito", en:"Shot", fr:"Shooter", nl:"Shotje"} },
     ];
 
-    const state = {
-      name: "",
-      quantities: Object.fromEntries(DRINKS.map(d => [d.id, 0])),
-    };
+    const state = { name: "", quantities: Object.fromEntries(DRINKS.map(d => [d.id, 0])) };
 
-    // ---- Utils -------------------------------------------------------------
     const fmt = (value) => new Intl.NumberFormat(
       locale === "nl" ? "nl-NL" : locale === "fr" ? "fr-FR" : locale === "en" ? "en-GB" : "es-ES",
       { style: "currency", currency: "EUR" }
     ).format(value);
 
-    const todayHint = () => {
-      const d = new Date();
-      const weekday = d.toLocaleDateString(
-        locale, { weekday: 'long' }
-      );
-      return `${weekday}, ${d.toLocaleDateString(locale)}`;
-    };
+    const todayHint = () => { const d = new Date(); const weekday = d.toLocaleDateString(locale, { weekday: 'long' }); return `${weekday}, ${d.toLocaleDateString(locale)}`; };
+    function total(){ return DRINKS.reduce((acc, d) => acc + (state.quantities[d.id] || 0) * d.price, 0); }
+    function hasAnyQty(){ return Object.values(state.quantities).some(v => v > 0); }
+    const getName = (d) => d.name[locale] || d.name.es;
 
-    function total(){
-      return DRINKS.reduce((acc, d) => acc + (state.quantities[d.id] || 0) * d.price, 0);
-    }
-
-    function hasAnyQty(){
-      return Object.values(state.quantities).some(v => v > 0);
-    }
-
-    // ---- Render ------------------------------------------------------------
     function render(){
-      // Labels
       const t = I18N[locale];
       document.getElementById("nameLabel").textContent = t.nameLabel;
       document.getElementById("nameInput").placeholder = t.namePlaceholder;
@@ -345,14 +215,13 @@
       document.getElementById("submitBtn").textContent = t.send;
       document.getElementById("todayHint").textContent = todayHint();
 
-      // Items
       const tbody = document.getElementById("items");
       tbody.innerHTML = "";
       DRINKS.forEach(d => {
         const tr = document.createElement("tr");
         tr.className = "grid row";
         tr.innerHTML = `
-          <td class="td">${d.name}</td>
+          <td class="td">${getName(d)}</td>
           <td class="td" style="text-align:right">${fmt(d.price)}</td>
           <td class="td" style="text-align:right">
             <div class="qty">
@@ -364,7 +233,6 @@
         tbody.appendChild(tr);
       });
 
-      // Bind qty buttons
       tbody.querySelectorAll("button").forEach(btn => {
         btn.addEventListener("click", (e) => {
           const id = e.currentTarget.getAttribute("data-id");
@@ -372,11 +240,10 @@
           const current = state.quantities[id] || 0;
           let next = action === "incr" ? current + 1 : Math.max(0, current - 1);
           state.quantities[id] = next;
-          render(); // re-render to update amounts
+          render();
         });
       });
 
-      // Total
       document.getElementById("totalAmount").textContent = fmt(total());
       validate();
     }
@@ -391,21 +258,14 @@
       document.getElementById("submitBtn").disabled = !!msg;
     }
 
-    // Name handling
     const nameInput = document.getElementById("nameInput");
     nameInput.addEventListener("input", (e)=>{ state.name = e.target.value; validate(); });
-    // Load saved name if any
     const savedName = localStorage.getItem("ab_name");
     if(savedName){ state.name = savedName; nameInput.value = savedName; }
 
-    // Clear
-    document.getElementById("clearBtn").addEventListener("click", () => {
-      for(const k in state.quantities) state.quantities[k] = 0;
-      render();
-    });
+    document.getElementById("clearBtn").addEventListener("click", () => { for(const k in state.quantities) state.quantities[k] = 0; render(); });
 
     // ---- Firebase (Firestore) ---------------------------------------------
-    // Replace with your Firebase config (Project settings → SDK setup and configuration)
     const firebaseConfig = {
   apiKey: "AIzaSyBPNfGVvTJWEim3qgK3rS2PcEaqpej3Dms",
   authDomain: "barbelga-3f021.firebaseapp.com",
@@ -414,68 +274,28 @@
   messagingSenderId: "111939067233",
   appId: "1:111939067233:web:6af08d6f96a22cb38c3920"
 };
-
-    const hasFirebase = Object.values(firebaseConfig).every(v => typeof v === "string" && !v.startsWith("YOUR_"));
+    const hasFirebase = Object.values(firebaseConfig).every(v => typeof v === "string" && v.length>0);
 
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
     import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
     let db = null;
-    if(hasFirebase){
-      const app = initializeApp(firebaseConfig);
-      db = getFirestore(app);
-    }
+    if(hasFirebase){ const app = initializeApp(firebaseConfig); db = getFirestore(app); }
 
-    function toast(text){
-      let t = document.createElement("div");
-      t.className="toast";
-      t.textContent = text;
-      document.body.appendChild(t);
-      setTimeout(()=>t.remove(), 2500);
-    }
+    function toast(text){ let t = document.createElement("div"); t.className="toast"; t.textContent = text; document.body.appendChild(t); setTimeout(()=>t.remove(), 2500); }
 
     async function sendOrder(){
       const t = I18N[locale];
-      const items = DRINKS
-        .map(d => ({ id: d.id, name: d.name, price: d.price, qty: state.quantities[d.id] || 0 }))
-        .filter(x => x.qty > 0);
-
-      const payload = {
-        name: state.name.trim(),
-        items,
-        total: total(),
-        status: "pending",
-        createdAt: new Date().toISOString(),
-      };
-
+      const items = DRINKS.map(d => ({ id: d.id, name: getName(d), price: d.price, qty: state.quantities[d.id] || 0 })).filter(x => x.qty > 0);
+      const payload = { name: state.name.trim(), items, total: total(), status: "pending", createdAt: new Date().toISOString() };
       try{
-        if(db){
-          // Persist to Firestore
-          await addDoc(collection(db, "orders"), {
-            ...payload,
-            createdAt: serverTimestamp(),
-          });
-        }else{
-          // Fallback (no Firebase config yet): save to localStorage so you can see the payload
-          const local = JSON.parse(localStorage.getItem("ab_local_orders") || "[]");
-          local.push(payload);
-          localStorage.setItem("ab_local_orders", JSON.stringify(local));
-          console.log("Simulated order (no Firebase config set):", payload);
-        }
-        localStorage.setItem("ab_name", payload.name);
-        toast(t.sent);
-        // Reset quantities after submit
-        for(const k in state.quantities) state.quantities[k] = 0;
-        render();
-      }catch(err){
-        console.error(err);
-        toast(t.error);
-      }
+        if(db){ await addDoc(collection(db, "orders"), { ...payload, createdAt: serverTimestamp() }); }
+        else{ const local = JSON.parse(localStorage.getItem("ab_local_orders") || "[]"); local.push(payload); localStorage.setItem("ab_local_orders", JSON.stringify(local)); console.log("Simulated order:", payload); }
+        localStorage.setItem("ab_name", payload.name); toast(t.sent); for(const k in state.quantities) state.quantities[k] = 0; render();
+      }catch(err){ console.error(err); toast(t.error); }
     }
-
     document.getElementById("submitBtn").addEventListener("click", sendOrder);
 
-    // Initial render
     render();
   </script>
 </body>
