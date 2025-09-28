@@ -8,10 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    :root{
-      --bg:#0f172a; --card:#111827; --muted:#94a3b8; --text:#e5e7eb; --accent:#22c55e; --accent-600:#16a34a; --shadow: 0 10px 25px rgba(0,0,0,.25); --radius:18px;
-      --green-row: rgba(34,197,94,.12);
-    }
+    :root{ --bg:#0f172a; --card:#111827; --muted:#94a3b8; --text:#e5e7eb; --accent:#22c55e; --accent-600:#16a34a; --shadow: 0 10px 25px rgba(0,0,0,.25); --radius:18px; --green-row: rgba(34,197,94,.12); }
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Arial,sans-serif}
     .container{max-width:1000px;margin:28px auto 56px;padding:0 16px}
@@ -34,6 +31,7 @@
     .items{font-size:14px;color:#cbd5e1;margin-top:6px}
     .muted{color:var(--muted);font-size:12px}
     .pill{font-size:12px;margin-left:8px;color:#cbd5e1}
+    .error{color:#fecaca}
   </style>
 </head>
 <body>
@@ -50,6 +48,7 @@
           <select id="range">
             <option value="today">Pedidos de hoy</option>
             <option value="thursday">Histórico (jueves)</option>
+            <option value="live">En vivo (sin filtros)</option>
           </select>
         </div>
         <div>
@@ -59,21 +58,21 @@
         <div style="text-align:right">
           <label>Orden</label>
           <select id="orderBy">
-            <option value="createdAt">Por creación</option>
+            <option value="createdAt">Por creación (viejo→nuevo)</option>
             <option value="name">Por nombre</option>
             <option value="total">Por total</option>
           </select>
         </div>
       </div>
 
-      <div class="muted">Click en una fila para ver el detalle. Usa el botón «Completar» para pasarlo abajo en verde.</div>
-
+      <div class="muted">Click en una fila para ver el detalle. Usa el botón «Completar».</div>
+      <div id="err" class="error"></div>
       <div id="list" class="list"></div>
     </div>
   </div>
 
   <script type="module">
-    // --- Firebase init (mismo objeto de config que en el frontend) ---------
+    // --- Firebase init ------------------------------------------------------
     const firebaseConfig = {
   apiKey: "AIzaSyBPNfGVvTJWEim3qgK3rS2PcEaqpej3Dms",
   authDomain: "barbelga-3f021.firebaseapp.com",
@@ -82,133 +81,86 @@
   messagingSenderId: "111939067233",
   appId: "1:111939067233:web:6af08d6f96a22cb38c3920"
 };
-    const hasFirebase = Object.values(firebaseConfig).every(v => typeof v === "string" && !v.startsWith("YOUR_"));
-
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-    import {
-      getFirestore, collection, query, where, orderBy, onSnapshot,
-      updateDoc, doc, serverTimestamp, Timestamp, getDocs, limit, startAt, endAt
-    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+    import { getFirestore, collection, query, where, orderBy, onSnapshot, updateDoc, doc, serverTimestamp, Timestamp, limit } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-    let db = null;
-    if(hasFirebase){
-      const app = initializeApp(firebaseConfig);
-      db = getFirestore(app);
-    } else {
-      document.getElementById("list").innerHTML = "<div class='muted'>Configura Firebase en este archivo para ver los pedidos reales.</div>";
-    }
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
     // Helpers
     const € = (n) => new Intl.NumberFormat('es-ES', {style:'currency', currency:'EUR'}).format(n || 0);
     const pad2 = (n) => n.toString().padStart(2,'0');
-    function startEndOfDay(d){
-      const start = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0,0,0);
-      const end = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23,59,59,999);
-      return {start, end};
-    }
-    function nearestThursday(baseDate){
-      // if base is Thursday -> same, else get closest previous Thursday
-      const d = new Date(baseDate);
-      const day = d.getDay(); // 0=Sun .. 4=Thu
-      const diff = (day >= 4) ? day - 4 : (7 - (4 - day));
-      d.setDate(d.getDate() - diff);
-      return d;
-    }
-    function ensureThursdayInput(el, value){
-      // force Thursdays in date input
-      const d = new Date(value);
-      if(d.getDay() !== 4){
-        const nd = nearestThursday(d);
-        el.value = `${nd.getFullYear()}-${pad2(nd.getMonth()+1)}-${pad2(nd.getDate())}`;
-      }
-    }
+    function ymd(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
+    function startEndOfDay(d){ const start = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0,0,0); const end = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23,59,59,999); return {start, end}; }
+    function nearestThursday(baseDate){ const d = new Date(baseDate); const day = d.getDay(); const diff = (day >= 4) ? day - 4 : (7 - (4 - day)); d.setDate(d.getDate() - diff); return d; }
+    function parseCreatedAt(row){ const v = row.createdAt; if(v && typeof v.toDate === 'function') return v.toDate(); if(typeof v === 'string') return new Date(v); if(typeof v === 'number') return new Date(v); return null; }
 
     const listEl = document.getElementById("list");
+    const errEl = document.getElementById("err");
     const dateInput = document.getElementById("dateInput");
     const rangeSel = document.getElementById("range");
     const orderSel = document.getElementById("orderBy");
 
-    // Initialize date to today or last Thursday
-    const now = new Date();
-    const lastThu = nearestThursday(now);
-    dateInput.value = `${lastThu.getFullYear()}-${pad2(lastThu.getMonth()+1)}-${pad2(lastThu.getDate())}`;
+    // Init Thursday date
+    const lastThu = nearestThursday(new Date());
+    dateInput.value = ymd(lastThu);
 
-    dateInput.addEventListener("change", (e)=>{
-      ensureThursdayInput(dateInput, e.target.value);
-      runQuery();
-    });
     rangeSel.addEventListener("change", runQuery);
     orderSel.addEventListener("change", runQuery);
+    dateInput.addEventListener("change", runQuery);
 
     let unsubscribe = null;
     function runQuery(){
-      if(!db) return;
       if(unsubscribe){ unsubscribe(); unsubscribe = null; }
+      errEl.textContent = "";
 
-      let qRef = collection(db, "orders");
       const mode = rangeSel.value;
-
-      if(mode === "today"){
-        const {start, end} = startEndOfDay(new Date());
-        qRef = query(
-          qRef,
-          where("createdAt", ">=", Timestamp.fromDate(start)),
-          where("createdAt", "<=", Timestamp.fromDate(end))
-        );
-      }else{
-        const d = new Date(dateInput.value);
-        ensureThursdayInput(dateInput, dateInput.value);
-        const {start, end} = startEndOfDay(d);
-        qRef = query(
-          qRef,
-          where("createdAt", ">=", Timestamp.fromDate(start)),
-          where("createdAt", "<=", Timestamp.fromDate(end))
-        );
+      let qRef;
+      try{
+        // Principal: ordenar por createdAt asc (viejo -> nuevo)
+        qRef = query(collection(db, "orders"), orderBy("createdAt", "asc"), limit(200));
+      }catch(err){
+        // Fallback: sin orderBy (si el índice/orden falla)
+        qRef = collection(db, "orders");
       }
 
-      // Always show pending first, then completed (client sorting)
       unsubscribe = onSnapshot(qRef, (snap)=>{
         const rows = [];
         snap.forEach(docu => rows.push({id:docu.id, ...docu.data()}));
-        const by = orderSel.value;
-        rows.sort((a,b)=>{
-          // pending first
-          if(a.status !== b.status){
-            if(a.status === "pending") return -1;
-            if(b.status === "pending") return 1;
-          }
-          if(by === "name") return (a.name||"").localeCompare(b.name||"");
-          if(by === "total") return (b.total||0) - (a.total||0);
-          // createdAt desc
-          const at = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
-          const bt = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
-          return bt - at;
-        });
-        renderList(rows);
+
+        let filtered = rows;
+        if(mode === "today" || mode === "thursday"){
+          const base = mode === "today" ? new Date() : new Date(dateInput.value);
+          const {start,end} = startEndOfDay(base);
+          filtered = rows.filter(r => { const d = parseCreatedAt(r); return d && d >= start && d <= end; });
+        }
+
+        renderList(filtered);
+      }, (err)=>{
+        console.error(err);
+        errEl.textContent = "Error leyendo pedidos: " + err.message;
       });
     }
 
     function renderList(rows){
-      if(!rows.length){
-        listEl.innerHTML = "<div class='muted'>No hay pedidos en este rango.</div>";
-        return;
-      }
+      if(!rows.length){ listEl.innerHTML = "<div class='muted'>No hay pedidos en este rango.</div>"; return; }
+      // Orden final: viejo -> nuevo (por si el fallback sin orderBy trae desorden)
+      rows.sort((a,b)=> (parseCreatedAt(a)?.getTime()||0) - (parseCreatedAt(b)?.getTime()||0) );
+
       listEl.innerHTML = "";
       rows.forEach(row => {
         const details = document.createElement("details");
         const isCompleted = row.status === "completed";
         details.style.background = isCompleted ? "var(--green-row)" : "#0b1220";
 
-        const time = row.createdAt?.toDate ? row.createdAt.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : "--:--";
+        const time = parseCreatedAt(row)?.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) || "--:--";
         const summary = document.createElement("summary");
         summary.innerHTML = `
           <div class="row">
             <div><strong>${row.name || "—"}</strong> <span class="pill">(${(row.items||[]).reduce((a,x)=>a+x.qty,0)} uds)</span></div>
             <div class="muted">${time}</div>
             <div>${€(row.total)}</div>
-            <div style="text-align:right">
-              <span class="status ${isCompleted ? "completed": ""}">${isCompleted ? "Completado" : "Pendiente"}</span>
-            </div>
+            <div style="text-align:right"><span class="status ${isCompleted ? "completed": ""}">${isCompleted ? "Completado" : "Pendiente"}</span></div>
           </div>`;
 
         const content = document.createElement("div");
@@ -224,11 +176,7 @@
         btn.addEventListener("click", async (e)=>{
           e.stopPropagation();
           try{
-            await updateDoc(doc(db, "orders", row.id), {
-              status: isCompleted ? "pending" : "completed",
-              updatedAt: serverTimestamp(),
-              completedAt: isCompleted ? null : serverTimestamp()
-            });
+            await updateDoc(doc(db, "orders", row.id), { status: isCompleted ? "pending" : "completed", updatedAt: serverTimestamp(), completedAt: isCompleted ? null : serverTimestamp() });
           }catch(err){ alert("Error al actualizar: " + err.message); }
         });
         actions.appendChild(btn);
