@@ -119,8 +119,10 @@
       listEl.innerHTML = "";
       const by = orderSel.value;
       rows.sort((a,b)=>{
-        if(a.status !== b.status){ if(a.status === "pending") return -1; if(b.status === "pending") return 1; }
-        if(by === "name") return (a.name||"").localeCompare(b.name||"");
+            const at = parseCreatedAt(a)?.getTime() || 0;
+            const bt = parseCreatedAt(b)?.getTime() || 0;
+            return at - bt; // más viejo -> más nuevo
+          });
         if(by === "total") return (b.total||0) - (a.total||0);
         const at = parseCreatedAt(a)?.getTime() || 0; const bt = parseCreatedAt(b)?.getTime() || 0; return bt - at;
       });
@@ -164,7 +166,7 @@
       if(mode === "live"){
         // Sin filtros: últimos 200 por createdAt desc (si existe), si no, por name.
         try{
-          const qRef = query(collection(db,"orders"), orderBy("createdAt","desc"), limit(200));
+          const qRef = query(collection(db,"orders"), orderBy("createdAt","asc"), limit(200));
           unsubscribe = onSnapshot(qRef,(snap)=>{
             const rows=[]; snap.forEach(d=>rows.push({id:d.id,...d.data()}));
             statDocs.textContent = `Documentos recibidos: ${snap.size}`;
@@ -186,7 +188,7 @@
         // Query amplia + filtro en cliente
         let qRef;
         try{
-          qRef = query(collection(db,"orders"), orderBy("createdAt","desc"), limit(200));
+          qRef = query(collection(db,"orders"), orderBy("createdAt","asc"), limit(200));
         }catch(_){
           qRef = collection(db,"orders");
         }
