@@ -59,6 +59,75 @@
     .toast{position:fixed;right:12px;top:12px;background:#0b1220;border:1px solid #1f2937;padding:12px 14px;border-radius:12px;box-shadow:var(--shadow)}
   </style>
 </head>
+
+  <button id="test-push">Probar notificación</button>
+
+<script>
+  const VAPID_PUBLIC_KEY = BGnW3Z0RvUafeqinWTlLwX9su68fnzOSMz565kY1sJRDYfBKlvI-ZsqwD67JWXKxV_z4UekFSzPa3i4FuYdnoNI; // <-- tu clave pública
+  const WORKER_PUSH_URL = "https://withered-bird-4c02.kligman-nicolas.workers.dev/push"; // <-- tu worker
+
+  // Utilidad: base64url -> Uint8Array
+  function urlBase64ToUint8Array(base64String) {
+    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+    const raw = atob(base64);
+    const output = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; ++i) output[i] = raw.charCodeAt(i);
+    return output;
+  }
+
+  async function setupPush() {
+    if (!("serviceWorker" in navigator)) {
+      alert("Tu navegador no soporta Service Workers.");
+      return;
+    }
+    if (!("PushManager" in window)) {
+      alert("Tu navegador no soporta Web Push.");
+      return;
+    }
+
+    // Importante en GitHub Pages:
+    // Usa 'sw.js' (sin barra inicial) para que tome el scope del repositorio.
+    const reg = await navigator.serviceWorker.register("sw.js");
+
+    // Pide permiso de notificaciones
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") {
+      alert("Permiso de notificaciones denegado.");
+      return;
+    }
+
+    // Crea suscripción con tu VAPID PUBLIC KEY
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+    });
+
+    // Envía la suscripción a tu Worker para disparar un push de prueba
+    const res = await fetch(WORKER_PUSH_URL, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ subscription: sub }),
+    });
+    const data = await res.json().catch(() => ({}));
+    console.log("Respuesta Worker:", data);
+    if (data.ok) {
+      alert("Push enviado. Revisa la notificación del sistema.");
+    } else {
+      alert("No se pudo enviar el push: " + (data.error || res.status));
+    }
+  }
+
+  document.getElementById("test-push").addEventListener("click", () => {
+    setupPush().catch(err => {
+      console.error(err);
+      alert("Error: " + err.message);
+    });
+  });
+</script>
+
+
+  
 <body>
   <div class="container">
     <header>
